@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RFID Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-1: #f5efe6;
+      --bg-2: #dce9f8;
+      --panel: rgba(255, 255, 255, 0.78);
+      --text: #1c2533;
+      --muted: #5a687c;
+      --accent: #0f766e;
+      --accent-strong: #0b5e57;
+      --border: rgba(24, 40, 64, 0.14);
+      --shadow: 0 24px 55px rgba(17, 35, 56, 0.18);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      font-family: "Space Grotesk", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(1200px 800px at 0% 0%, #ffffff 0%, transparent 60%),
+        radial-gradient(1000px 700px at 100% 100%, #ffd9bf 0%, transparent 65%),
+        linear-gradient(130deg, var(--bg-1), var(--bg-2));
+    }
+
+    .card {
+      width: min(460px, 100%);
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 34px 30px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+
+    h2 {
+      margin: 0;
+      font-size: clamp(1.6rem, 2vw, 2rem);
+      line-height: 1.15;
+      letter-spacing: 0.02em;
+    }
+
+    .subtitle {
+      margin: 10px 0 24px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .field {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    label {
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    input {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 1rem;
+      font-family: inherit;
+      background: rgba(255, 255, 255, 0.85);
+      color: var(--text);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.15);
+    }
+
+    button {
+      width: 100%;
+      margin-top: 10px;
+      border: 0;
+      border-radius: 12px;
+      padding: 13px 16px;
+      font-family: inherit;
+      font-weight: 700;
+      font-size: 0.98rem;
+      letter-spacing: 0.03em;
+      color: #ffffff;
+      background: linear-gradient(160deg, var(--accent), #149a90);
+      cursor: pointer;
+      transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.2s ease;
+      box-shadow: 0 12px 24px rgba(15, 118, 110, 0.26);
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      background: linear-gradient(160deg, var(--accent-strong), #0f8178);
+      box-shadow: 0 14px 28px rgba(15, 118, 110, 0.34);
+    }
+
+    button:active {
+      transform: translateY(1px);
+      box-shadow: 0 8px 18px rgba(15, 118, 110, 0.24);
+    }
+
+    #balance {
+      margin-top: 18px;
+      border: 1px dashed rgba(15, 118, 110, 0.35);
+      background: rgba(248, 255, 254, 0.88);
+      border-radius: 12px;
+      padding: 12px 14px;
+      min-height: 46px;
+      display: grid;
+      align-items: center;
+      color: #164f5a;
+      font-weight: 600;
+      font-size: 0.96rem;
+    }
+
+    @media (max-width: 520px) {
+      .card {
+        padding: 24px 20px;
+        border-radius: 18px;
+      }
+
+      h2 {
+        font-size: 1.45rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Top Up Card</h2>
+    <p class="subtitle">Recharge RFID balances in real time.</p>
+
+    <div class="field">
+      <label for="uid">Card UID</label>
+      <input id="uid" placeholder="e.g. A1B2C3D4">
+    </div>
+
+    <div class="field">
+      <label for="amount">Amount</label>
+      <input id="amount" type="number" placeholder="e.g. 5000">
+    </div>
+
+    <button onclick="topup()">Top Up</button>
+    <div id="balance">Waiting for updates...</div>
+  </div>
+
+<script>
+function topup() {
+  const uid = document.getElementById("uid").value.trim();
+  const amount = parseInt(document.getElementById("amount").value);
+
+  if (!uid || isNaN(amount) || amount <= 0) {
+    alert("Please enter a valid UID and amount!");
+    return;
+  }
+
+  console.log("Sending top-up:", { uid, amount });
+
+  fetch(`http://127.0.0.1:3000/topup`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ uid, amount })
+  })
+  .then(res => res.json())
+  .then(data => {
+    console.log("Top-up response:", data);
+    alert(data.message);
+  })
+  .catch(err => {
+    console.error("Top-up error:", err);
+    alert("Error sending top-up");
+  });
+}
+
+// WebSocket for live balance updates
+const ws = new WebSocket(`ws://127.0.0.1:3000`);
+
+ws.onopen = () => console.log("WebSocket connected");
+ws.onerror = (err) => console.error("WebSocket error:", err);
+ws.onclose = () => console.log("WebSocket closed");
+
+ws.onmessage = (event) => {
+  console.log("WebSocket message received:", event.data);
+  const data = JSON.parse(event.data);
+  document.getElementById("balance").innerText =
+    `Card UID: ${data.uid} | New Balance: ${data.balance}`;
+};
+</script>
+</body>
+</html>
