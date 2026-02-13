@@ -1,12 +1,11 @@
 const express = require("express");
 const mqtt = require("mqtt");
 const WebSocket = require("ws");
-const bodyParser = require("body-parser");
 const cors = require("cors");
 
 const app = express();
 app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json());
 
 const team_id = "benise07";
 const mqttClient = mqtt.connect("mqtt://157.173.101.159");
@@ -19,9 +18,17 @@ const wss = new WebSocket.Server({ server });
 
 mqttClient.on("connect", () => {
   console.log("Connected to MQTT broker");
-  mqttClient.subscribe(`rfid/${team_id}/card/status`, (err) => {
-    if (!err) console.log("Subscribed to balance topic");
-    else console.error("MQTT subscribe error:", err);
+  const topics = [
+    `rfid/${team_id}/card/status`,
+    `rfid/${team_id}/card/balance`
+  ];
+
+  mqttClient.subscribe(topics, (err) => {
+    if (!err) {
+      console.log("Subscribed to card status and balance topics");
+    } else {
+      console.error("MQTT subscribe error:", err);
+    }
   });
 });
 
@@ -54,5 +61,17 @@ app.post("/topup", (req, res) => {
 
 mqttClient.on("message", (topic, message) => {
   console.log("MQTT message received:", topic, message.toString());
-  broadcast(message.toString());
+  let payload = message.toString();
+
+  try {
+    const parsed = JSON.parse(payload);
+    if (typeof parsed.balance === "undefined" && typeof parsed.new_balance !== "undefined") {
+      parsed.balance = parsed.new_balance;
+    }
+    payload = JSON.stringify(parsed);
+  } catch (err) {
+    console.warn("Non-JSON MQTT payload forwarded as-is");
+  }
+
+  broadcast(payload);
 });
