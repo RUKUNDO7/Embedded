@@ -92,7 +92,7 @@ void reconnect() {
 }
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(460800);
   delay(1000);
   Serial.println("ESP8266 starting...");
 
