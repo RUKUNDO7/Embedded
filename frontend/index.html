@@ -167,6 +167,11 @@
   </div>
 
 <script>
+const defaultHost = "127.0.0.1";
+const host = window.location.hostname || defaultHost;
+const apiBase = `http://${host}:3000`;
+const wsProtocol = window.location.protocol === "https:" ? "wss" : "ws";
+
 function topup() {
   const uid = document.getElementById("uid").value.trim();
   const amount = parseInt(document.getElementById("amount").value);
@@ -178,7 +183,7 @@ function topup() {
 
   console.log("Sending top-up:", { uid, amount });
 
-  fetch(`http://127.0.0.1:3000/topup`, {
+  fetch(`${apiBase}/topup`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ uid, amount })
@@ -195,7 +200,7 @@ function topup() {
 }
 
 // WebSocket for live balance updates
-const ws = new WebSocket(`ws://127.0.0.1:3000`);
+const ws = new WebSocket(`${wsProtocol}://${host}:3000`);
 
 ws.onopen = () => console.log("WebSocket connected");
 ws.onerror = (err) => console.error("WebSocket error:", err);
@@ -204,8 +209,9 @@ ws.onclose = () => console.log("WebSocket closed");
 ws.onmessage = (event) => {
   console.log("WebSocket message received:", event.data);
   const data = JSON.parse(event.data);
+  const balance = typeof data.balance !== "undefined" ? data.balance : data.new_balance;
   document.getElementById("balance").innerText =
-    `Card UID: ${data.uid} | New Balance: ${data.balance}`;
+    `Card UID: ${data.uid} | New Balance: ${balance}`;
 };
 </script>
 </body>
